@@ -1,0 +1,43 @@
+# file generated with AI assistance: Claude Code - 2025-11-22 00:35:00
+
+services:
+    _defaults:
+        autowire: true
+        autoconfigure: true
+        public: false
+
+    # Schema Registry Service
+    Dmstr\OpenApiJsonSchema\Service\SchemaRegistry:
+        arguments:
+            $cache: '@cache.app'
+            $logger: '@logger'
+            $cacheTtl: '%dmstr_openapi_json_schema.cache_ttl%'
+        tags: ['monolog.logger']
+        calls:
+            # Register all tagged schema providers
+            - registerProviders: [!tagged_iterator dmstr_openapi_json_schema.provider]
+
+    # OpenAPI Decorator for JSON Fields
+    Dmstr\OpenApiJsonSchema\OpenApi\JsonFieldSchemaDecorator:
+        decorates: 'api_platform.json_schema.schema_factory'
+        decoration_priority: 10
+        arguments:
+            $decorated: '@.inner'
+            $schemaRegistry: '@Dmstr\OpenApiJsonSchema\Service\SchemaRegistry'
+            $logger: '@logger'
+            $schemaBasePath: '%dmstr_openapi_json_schema.schema_base_path%'
+        tags: ['monolog.logger']
+
+    # Jedison Grid Layout Decorator
+    # Runs after JsonFieldSchemaDecorator so x-grid annotations land on the
+    # final (post-injected) property set.
+    Dmstr\OpenApiJsonSchema\OpenApi\JedisonGridSchemaDecorator:
+        decorates: 'api_platform.json_schema.schema_factory'
+        decoration_priority: -10
+        arguments:
+            $decorated: '@.inner'
+
+    # Auto-register schema providers
+    _instanceof:
+        Dmstr\OpenApiJsonSchema\Interface\SchemaProviderInterface:
+            tags: ['dmstr_openapi_json_schema.provider']
