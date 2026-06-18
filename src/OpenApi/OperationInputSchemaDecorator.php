@@ -10,15 +10,19 @@ use ApiPlatform\OpenApi\Model\Operation;
 use ApiPlatform\OpenApi\Model\PathItem;
 use ApiPlatform\OpenApi\Model\RequestBody;
 use ApiPlatform\OpenApi\OpenApi;
-use Dmstr\OpenApiJsonSchema\Service\OperationInputSchemaResolver;
+use Dmstr\OpenApiJsonSchema\Interface\InputSchemaResolverInterface;
 
 /**
- * Injects per-operation JSON-Schema input files as OpenAPI `requestBody`.
+ * Injects per-operation JSON-Schema input as OpenAPI `requestBody`.
  *
- * Convention: operation `<name>` looks up `config/schemas/<name-kebab>-input.json`
- * via {@see OperationInputSchemaResolver}. Operations without a matching file
- * are left untouched, so standard CRUD endpoints keep their API-Platform
- * default request body.
+ * The schema is resolved through the {@see InputSchemaResolverInterface} chain
+ * (static file resolver by default, plus any custom resolvers). Operations
+ * without a matching schema are left untouched, so standard CRUD endpoints keep
+ * their API-Platform default request body.
+ *
+ * The chain is queried build-time (no per-instance $context), so dynamic
+ * resolvers should return a representative/base schema or null here and expose
+ * their per-instance schema through their own runtime channel.
  */
 final class OperationInputSchemaDecorator implements OpenApiFactoryInterface
 {
@@ -27,7 +31,7 @@ final class OperationInputSchemaDecorator implements OpenApiFactoryInterface
 
     public function __construct(
         private readonly OpenApiFactoryInterface $decorated,
-        private readonly OperationInputSchemaResolver $resolver,
+        private readonly InputSchemaResolverInterface $resolver,
     ) {
     }
 
@@ -47,10 +51,12 @@ final class OperationInputSchemaDecorator implements OpenApiFactoryInterface
                     continue;
                 }
                 $opName = (string) ($op->getOperationId() ?? '');
-                $schema = $this->resolver->loadSchema($opName);
+                $schema = $this->resolver->resolve($opName);
                 if (null === $schema) {
                     continue;
                 }
+
+                $requiredProps = $schema['required'] ?? null;
 
                 $requestBody = new RequestBody(
                     description: (string) ($schema['description'] ?? ''),
@@ -59,7 +65,7 @@ final class OperationInputSchemaDecorator implements OpenApiFactoryInterface
                             'schema' => $this->stripTopLevelMeta($schema),
                         ],
                     ]),
-                    required: $this->resolver->isRequired($schema),
+                    required: \is_array($requiredProps) && [] !== $requiredProps,
                 );
 
                 $patchedItem = $patchedItem->{$wither}($op->withRequestBody($requestBody));

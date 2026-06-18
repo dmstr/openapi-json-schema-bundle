@@ -5,6 +5,8 @@ declare(strict_types=1);
 
 namespace Dmstr\OpenApiJsonSchema\Service;
 
+use Dmstr\OpenApiJsonSchema\Interface\InputSchemaResolverInterface;
+
 /**
  * Resolves an API Platform operation name to its JSON-Schema input file.
  *
@@ -21,7 +23,7 @@ namespace Dmstr\OpenApiJsonSchema\Service;
  *   - {@see \App\Service\JobQueueService} validates incoming request bodies
  *     against the same schema before dispatching a job.
  */
-final class OperationInputSchemaResolver
+final class OperationInputSchemaResolver implements InputSchemaResolverInterface
 {
     /** @var array<string,?string> */
     private array $cache = [];
@@ -67,6 +69,25 @@ final class OperationInputSchemaResolver
         $decoded = json_decode($content, true);
 
         return \is_array($decoded) ? $decoded : null;
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * The static file resolver ignores $context — a schema file either exists
+     * for the operation or it does not.
+     */
+    public function supports(string $operationName, array $context = []): bool
+    {
+        return null !== $this->getSchemaFile($operationName);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public function resolve(string $operationName, array $context = []): ?array
+    {
+        return $this->loadSchema($operationName);
     }
 
     /**

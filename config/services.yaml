@@ -37,6 +37,16 @@ services:
         arguments:
             $decorated: '@.inner'
 
+    # Input-schema resolver chain: pluggable per-operation input schemas.
+    # Members are tagged `dmstr_openapi_json_schema.input_resolver` (higher
+    # priority tried first); the interface alias makes the chain the default.
+    Dmstr\OpenApiJsonSchema\Service\ChainInputSchemaResolver:
+        arguments:
+            $resolvers: !tagged_iterator { tag: dmstr_openapi_json_schema.input_resolver }
+
+    Dmstr\OpenApiJsonSchema\Interface\InputSchemaResolverInterface:
+        '@Dmstr\OpenApiJsonSchema\Service\ChainInputSchemaResolver'
+
     # Auto-register schema providers
     _instanceof:
         Dmstr\OpenApiJsonSchema\Interface\SchemaProviderInterface:
