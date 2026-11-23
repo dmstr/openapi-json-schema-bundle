@@ -47,6 +47,11 @@ services:
     Dmstr\OpenApiJsonSchema\Interface\InputSchemaResolverInterface:
         '@Dmstr\OpenApiJsonSchema\Service\ChainInputSchemaResolver'
 
+    # Validates operation input against the schema the chain resolves, so a
+    # REST processor and its CLI mirror enforce the documented request body.
+    Dmstr\OpenApiJsonSchema\Service\InputSchemaValidator:
+        public: true
+
     # Auto-register schema providers
     _instanceof:
         Dmstr\OpenApiJsonSchema\Interface\SchemaProviderInterface:
