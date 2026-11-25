@@ -60,6 +60,17 @@ class JsonFieldSchemaDecorator implements SchemaFactoryInterface
      */
     private function getSchemaNameFromAttribute(string $className, string $propertyName): ?string
     {
+        return $this->readSchemaNameAttribute($className, $propertyName);
+    }
+
+    /**
+     * Reads the #[JsonSchema] attribute of the property via reflection and returns the schema name,
+     * or null when there is no attribute, the property does not exist or reflection fails.
+     *
+     * @internal
+     */
+    protected function readSchemaNameAttribute(string $className, string $propertyName): ?string
+    {
         try {
             $reflectionClass = new ReflectionClass($className);
 
