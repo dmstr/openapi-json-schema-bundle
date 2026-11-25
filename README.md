@@ -6,7 +6,7 @@ Inject JSON Schemas into OpenAPI documentation for API Platform.
 
 ## Features (planned)
 
-- `SchemaRegistry` — merges provider schemas into a discriminated `anyOf`
+- `SchemaRegistry` — merges provider schemas into a discriminated `anyOf`. Without registered providers, the unified schema is the boolean schema `false`, which rejects every input.
 - `#[JsonSchema]` attribute — references entity-local JSON Schema files
 - `OperationInputSchemaResolver` — entity-local + path-fallback schema lookup
 - `InputSchemaValidator` — validates operation input (raw request body or decoded CLI options) against the schema the resolver chain returns: 400 for malformed JSON, 422 for a schema violation
