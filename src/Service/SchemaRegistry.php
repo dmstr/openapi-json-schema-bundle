@@ -99,12 +99,17 @@ class SchemaRegistry
     /**
      * Generate unified schema with anyOf pattern for all registered providers
      *
-     * @return array JSON Schema with anyOf combining all provider schemas
+     * Without registered providers the boolean schema false is returned,
+     * which rejects every input (fail closed).
+     *
+     * @return array<string,mixed>|false JSON Schema with anyOf combining all provider schemas, or false
      */
-    public function getUnifiedSchema(): array
+    public function getUnifiedSchema(): array|bool
     {
         $cacheItem = $this->cache->getItem(self::CACHE_KEY);
 
+        // Rely on isHit() rather than the cached value, so a cached boolean
+        // schema false is a hit and not mistaken for a cache miss.
         if ($cacheItem->isHit()) {
             return $cacheItem->get();
         }
@@ -133,18 +138,15 @@ class SchemaRegistry
     /**
      * Generate the unified schema structure
      *
-     * @return array
+     * @return array<string,mixed>|false Unified anyOf schema, or the boolean schema false without providers
      * @throws \RuntimeException If schema file not found or invalid JSON
      */
-    private function generateUnifiedSchema(): array
+    private function generateUnifiedSchema(): array|bool
     {
         if (empty($this->providers)) {
-            $this->logger->warning('No schema providers registered, returning empty anyOf schema');
-            return [
-                '$schema' => 'https://json-schema.org/draft-07/schema#',
-                'description' => 'No schemas available',
-                'anyOf' => []
-            ];
+            // An empty anyOf is invalid JSON Schema; false rejects all input instead.
+            $this->logger->warning('No schema providers registered, returning boolean schema false (rejects all input)');
+            return false;
         }
 
         $anyOfSchemas = [];
