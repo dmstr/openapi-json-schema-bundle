@@ -56,11 +56,26 @@ class JsonFieldSchemaDecorator implements SchemaFactoryInterface
     }
 
     /**
-     * Get schema name for a property by checking #[JsonSchema] attribute
+     * Schema names resolved from the #[JsonSchema] attribute, keyed by "class::property".
+     * Holds null for properties without the attribute, so negative results are remembered too.
+     *
+     * @var array<string, string|null>
+     */
+    private array $schemaNameMemo = [];
+
+    /**
+     * Get schema name for a property by checking #[JsonSchema] attribute.
+     * The lookup depends only on class and property, so it is resolved at most once per instance.
      */
     private function getSchemaNameFromAttribute(string $className, string $propertyName): ?string
     {
-        return $this->readSchemaNameAttribute($className, $propertyName);
+        $key = $className . '::' . $propertyName;
+
+        if (!array_key_exists($key, $this->schemaNameMemo)) {
+            $this->schemaNameMemo[$key] = $this->readSchemaNameAttribute($className, $propertyName);
+        }
+
+        return $this->schemaNameMemo[$key];
     }
 
     /**
