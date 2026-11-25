@@ -4,6 +4,14 @@
 
 All notable changes to this bundle are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and the bundle uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.0] - 2026-11-25
+
+### Changed
+- `SchemaRegistry::getUnifiedSchema()` returns `array|bool` instead of `array`. Callers typed against `array` must handle `false`.
+- Without registered schema providers, the unified schema is the boolean JSON schema `false`, which rejects all input (fail closed). It replaces the schema with an empty `anyOf`, which is invalid JSON Schema and made opis throw an `InvalidKeywordException` (#3).
+- The upgrade does not invalidate the unified schema cache: without providers, a warm cache keeps serving the old schema with the empty `anyOf` until its TTL expires (`cache_ttl`, default 3600 s). Clear the cache after upgrading.
+- `JsonFieldSchemaDecorator` resolves the `#[JsonSchema]` attribute lookup at most once per class and property per decorator instance, negative results included; the output is unchanged (dmstr/api-platform-utils-bundle#14).
+
 ## [0.5.0] - 2026-11-23
 
 ### Added
